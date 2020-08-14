@@ -43,6 +43,10 @@ The official [logstash](https://www.elastic.co/guide/en/logstash/current/docker.
 
 ## Kubernets
 
+Tip for a nicely formatted configmap (applying this config map may produce a single liner in the logstash.conf: section of the yaml) you may treasure this for any config map using configuration files:
+
+    kubectl get -o yaml cm [YOUR CONFIGMAP NAME] | sed -E 's/[[:space:]]+\\n/\\n/g' | kubectl apply -f -
+
 Example config map for logstash 7.8.x deployed in kubernetes:
 
     apiVersion: v1
