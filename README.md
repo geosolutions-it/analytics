@@ -2,7 +2,7 @@
 
 ## Log injection Diagram
 
-**Filebeat => Logstash => Elasticsearch <= Kibana**
+    **Filebeat => Logstash => Elasticsearch <= Kibana**
 
 ## Configuring Kibana
 
@@ -11,7 +11,22 @@ This should be done with the provided bash script which also will correctly set 
 
     cd kibana
     chmod +x ./install-dashboard.sh
-    ./install-dashboard.sh -h=https://localhost:5601 -n=MyCompany -u=elastic
+    ./install-dashboard.sh -h=https://localhost:5601 -n=MyCompany -u=elastic -s=geoserver-space
+
+## Contribute to Kibana dashboard
+
+To make a default.ndjson file compatibile with `install-dashboard.sh` all you need to do is:
+
+- export from kibana the dashboard with all its related objects, save it as `default.ndjson`.
+
+- if you changed CustomerNamePlaceHolder to MyCompany with the `install-dashboard.sh` script explained [here](#Configuring-Kibana) issue:
+  `sed -i "s/PubliAcqua/CustomerNamePlaceHolder/g" default.ndjson`
+
+- test it making a new empty space (i.e. "geoserver-test-space") in kibana, upload your default.ndjson, checking that index pattern and each other dashobard objects, including the ones added/modified are working:
+
+    `./install-dashboard.sh -h=https://localhost:5601 -n=MyCompany -u=elastic -s=geoserver-test-space`
+
+- Once everything looks fine you may share your `default.ndjson` making a PR
 
 ## Logstash configuration examples
 
@@ -26,7 +41,7 @@ Configuring logstash.yml is out of the scope of the logstash filters for Geoserv
 ## Filebeat configuration examples
 
 For default filebeat installation you should just need to copy files in place and restart filebeat:
-    
+
     cp filebeat/conf.d/{geoserver-audit,geoserver-log} /etc/filebeat/conf.d/
 
 ## Logstash configuration debug
@@ -37,8 +52,8 @@ The official [logstash](https://www.elastic.co/guide/en/logstash/current/docker.
 
 ## Grok Debuggers
 
-- https://grokconstructor.appspot.com/
-- https://grokdebug.herokuapp.com/
+- <https://grokconstructor.appspot.com/>
+- <https://grokdebug.herokuapp.com/>
 - Embedded Kibana Grok Debugger
 
 ## Kubernets
