@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-
 function usage {
 
  echo "usage:"
- echo "$1 [-u|--user <username>] [-p|--password <password>] -n|--project-name <name> -h|--kibana-host <host_url>"
+ echo "$1 [-u|--user=<username>] [-p|--password=<password>] -n|--project-name=<name> -h|--kibana-host=<host_url> -s|--space=<space>"
  exit 0
 }
 
@@ -26,6 +25,9 @@ for i in "$@"; do
         -h=*|--kibana-host=*)
         KIBANA_HOST=$(arg_parse $i)
         ;;
+        -s=*|--space=*)
+        SPACE=$(arg_parse $i)
+        ;;
         *)
         usage $0
         ;;
@@ -33,12 +35,13 @@ for i in "$@"; do
 done
 [ -z "$KIBANA_HOST" ] && usage $0
 [ -z "$PROJECT_NAME" ] && usage $0
-
+[ -z "$SPACE" ] && SPACE="default"
 KDB_DEST_DIR="./build"
 mkdir -p $KDB_DEST_DIR
-CURLARGS="-k -X POST $KIBANA_HOST/api/saved_objects/_import -H kbn-xsrf:true --form file=@$KDB_DEST_DIR/$PROJECT_NAME.ndjson"
+CURLARGS="-k -X POST $KIBANA_HOST/s/$SPACE/api/saved_objects/_import?overwrite=true -H kbn-xsrf:true --form file=@$KDB_DEST_DIR/$PROJECT_NAME.ndjson"
 cp ./default.ndjson $KDB_DEST_DIR/$PROJECT_NAME.ndjson
-sed -i "s/CustomerNamePlaceHolder/$PROJECT_NAME/g" $KDB_DEST_DIR/$PROJECT_NAME.ndjson    
+sed -i "s/CustomerNamePlaceHolder/$PROJECT_NAME/g" $KDB_DEST_DIR/$PROJECT_NAME.ndjson
+sed -i "s/SpaceNamePlaceHolder/$SPACE/g" $KDB_DEST_DIR/$PROJECT_NAME.ndjson
 [ "$ELASTIC_USER" != "" ] && [ "$ELASTIC_PASSWORD" == "" ] && curl -u$ELASTIC_USER \
 $CURLARGS
 [ "$ELASTIC_USER" != "" ] && [ "$ELASTIC_PASSWORD" != "" ] && curl -u$ELASTIC_USER:$ELASTIC_PASSWORD \
