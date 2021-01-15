@@ -16,6 +16,7 @@ services:
         hard: -1
     volumes:
       - data:/usr/share/elasticsearch/data
+      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     ports:
       - 9200:9200
 
@@ -30,6 +31,7 @@ services:
     volumes:
       - ./logstash:/usr/share/logstash/pipeline/
       - ./logstash/patterns:/usr/share/logstash/patterns/
+      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
     links:
         - elasticsearch:elasticsearch
     depends_on:
@@ -44,6 +46,8 @@ services:
     environment:
       - ELASTICSEARCH_URL=http://elkstack1.int.unavco.org:9200
       - ELASTICSEARCH_HOSTS=http://elkstack1.int.unavco.org:9200
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
 
 volumes:
   data:

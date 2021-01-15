@@ -13,6 +13,8 @@ This should be done with the provided bash script which also will correctly set 
     chmod +x ./install-dashboard.sh
     ./install-dashboard.sh -h=https://localhost:5601 -n=MyCompany -u=elastic -s=geoserver-space
 
+    ./install-dashboard.sh -h=https://elkstack1.int.unavco.org:5601 -n=Unavco -u=elastic -s=geoserver-space
+
 ## Contribute to Kibana dashboard
 
 To make a default.ndjson file compatibile with `install-dashboard.sh` all you need to do is:
