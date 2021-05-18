@@ -1,0 +1,54 @@
+version: '2.2'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    container_name: elasticsearch
+    hostname: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=elasticsearch 
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data:/usr/share/elasticsearch/data
+      - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - 9200:9200
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.10.0
+    container_name: logstash
+    hostname: logstash
+    ports:
+        - 9600:9600
+        - 8089:8089
+        - 5044:5044
+    volumes:
+      - ./logstash:/usr/share/logstash/pipeline/
+      - ./logstash/patterns:/usr/share/logstash/patterns/
+      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+    links:
+        - elasticsearch:elasticsearch
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    container_name: kibana
+    hostname: kibana
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_URL=http://elkstack1.int.unavco.org:9200
+      - ELASTICSEARCH_HOSTS=http://elkstack1.int.unavco.org:9200
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+
+volumes:
+  data:
+    driver: local

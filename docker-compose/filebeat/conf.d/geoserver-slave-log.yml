@@ -1,8 +1,8 @@
 - type: log
   paths:
-    - /opt/logs/geoserver-logs/*master*.log*
+    - /opt/logs/geoserver-logs/*slave*.log*
   scan_frequency: 10s
-  tags: ["geoserver", "master", "logs", "log"]
+  tags: ["geoserver", "slave", "logs", "log"]
   fields_under_root: true
   fields:
     type: geoserver-logs

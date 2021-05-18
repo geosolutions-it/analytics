@@ -1,0 +1,7 @@
+# Default Kibana configuration for docker target
+server.name: kibana
+server.host: "0"
+elasticsearch.hosts: [ "http://elkstack1.int.unavco.org:9200" ]
+monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "yourpassword"
