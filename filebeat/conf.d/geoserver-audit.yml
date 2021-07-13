@@ -1,8 +1,7 @@
-filebeat:
- inputs:
-   - paths:
-      - /opt/logs/geoserver-audits/*.log
-     tags: ["geoserver", "master"]
-     fields:  {type: geoserver-audit}
-     fields_under_root: true
-     input_type: log
+- type: log 
+  paths:
+    - {{ GEOSERVERAUDIT }}/*.log
+  tags: ["geoserver"]
+  fields:  {type: geoserver-audit}
+  fields_under_root: true
+     
