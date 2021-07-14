@@ -1,6 +1,6 @@
 - type: log 
   paths:
-    - {{ GEOSERVERAUDIT }}/*.log
+    - /var/geoserver/audit/*.log
   tags: ["geoserver"]
   fields:  {type: geoserver-audit}
   fields_under_root: true
