@@ -1,7 +1,7 @@
 filebeat:
   inputs:
     - paths:
-       - /opt/logs/*master*.log*
+       - /var/geoserver/logs/*.log
       tags: ["geoserver", "master", "logs", "log"]
       fields_under_root: true
       fields:  {type: geoserver-logs}
@@ -9,3 +9,6 @@ filebeat:
       multiline.pattern: '^([0-9]{4}-[0-9]{2}-[0-9]{2})'
       multiline.negate: true
       multiline.match: after
+
+output.logstash:
+  hosts: ["logstash01:9601"]
