@@ -1,0 +1,43 @@
+filebeat.inputs:
+- type: log
+  id: geoserver-filestream
+  paths:
+    - /var/geoserver/logs/*.log
+  tags: ["Master"]
+  fields:
+    app_context: geoserver_logs
+  fields_under_root: true
+
+- type: log
+  id: audit-filestream
+  paths:
+    - /var/geoserver/audits/*.log
+  tags: ["Master"]
+  fields:
+    app_context: geoserver_audit_logs
+  fields_under_root: true 
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+processors:
+- add_docker_metadata: ~
+
+#setup.kibana:
+#  host: ${KIBANA_HOSTS}
+#  username: ${ELASTIC_USER}
+#  password: ${ELASTIC_PASSWORD} 
+
+output.logstash:
+  hosts: ["logstash01:9601"]
+
+
+#output.elasticsearch:
+#  hosts: ${ELASTIC_HOSTS}
+#  username: ${ELASTIC_USER}
+#  password: ${ELASTIC_PASSWORD}
+#  ssl.enabled: true
+#  ssl.certificate_authorities: "certs/ca/ca.crt"
+  
