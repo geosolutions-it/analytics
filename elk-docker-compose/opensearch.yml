@@ -1,0 +1,38 @@
+cluster.name: my-application
+node.name: node-1
+#path.data: D:\Anisha\opensearch-2.12.0-windows-x64\opensearch-2.12.0\data
+#path.logs: D:\Anisha\opensearch-2.12.0-windows-x64\opensearch-2.12.0\logs
+network.host: 0.0.0.0
+http.port: 9200
+discovery.type: single-node
+#plugins.security.disabled: true
+# discovery.seed_hosts: ["localhost", "WSAMZN-R09HSJ46"]
+
+plugins:
+  security:
+    allow_default_init_securityindex: true
+    ssl:
+      http.enabled: false
+      #http.pemcert_filepath: cert.pem
+      #http.pemkey_filepath: key.pem
+      #http.pemtrustedcas_filepath: ca.pem
+      transport.enabled: true # must be true as per startup error
+      transport.enforce_hostname_verification: false
+      transport.pemcert_filepath: cert.pem
+      transport.pemkey_filepath: key.pem
+      transport.pemtrustedcas_filepath: ca.pem
+    authcz.admin_dn:
+      - CN=admin,L=Some Location,ST=Some State,C=US
+    #nodes_dn:
+    #  - 'C=US,ST=Some State,L=Some Location,CN=example.com'
+    audit.type: internal_opensearch
+    enable_snapshot_restore_privilege: true
+    check_snapshot_restore_write_privileges: true
+    restapi.roles_enabled: ["all_access", "security_rest_api_access"]
+
+cluster.routing.allocation.disk.threshold_enabled: false
+
+opendistro_security.audit.config.disabled_rest_categories: NONE
+opendistro_security.audit.config.disabled_transport_categories: NONE
+
+compatibility.override_main_response_version: true

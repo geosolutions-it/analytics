@@ -1,7 +1,0 @@
-LAYERS (?:[\w\s:,-]+)
-USERNAME (?:[\w]+)
-ERRORMESSAGE (?:[\w]+)
-SERVICEVERSION (?:[\d\.]+)
-QUERYSTRING (?:[-A-Za-z0-9 &='.,;:_/+#]+)
-BBOX %{NUMBER:BBox1:float},%{NUMBER:BBox2:float},%{NUMBER:BBox3:float},%{NUMBER:BBox4:float}
-GEOSERVER_AUDIT (%{INT:RequestId})?,(%{IPORHOST:ServerHost})?,(%{WORD:Service})?,(%{SERVICEVERSION:ServiceVersion})?,(%{WORD:Operation})?,(%{WORD:SubOperation})?,(\"%{LAYERS:Layers}\")?,(\"%{BBOX:BBox}\")?,(\"%{URIPATH:RequestPath}\")?,(\"%{QUERYSTRING:QueryString}\")?,\"(%{DATA:RequestBody})?\",(%{WORD:RequestMethod})?,(\"%{TIMESTAMP_ISO8601:StartTime}\")?,(\"%{TIMESTAMP_ISO8601:EndTime}\")?,(%{POSINT:ResponseTime:int})?,(\"(%{IPORHOST:ClientAddress})?(:)?(%{NUMBER:ClientPort})?\")?,(\")?(%{USERNAME:User})?(\")?,(%{QS:UserAgent})?,(%{POSINT:ResponseHTTPStatus:int})?,(%{POSINT:ResponseLength:int})?,(%{QS:ResponseContentType})?,(\"%{WORD:Error}\")?,(\"%{ERRORMESSAGE:ErrorMessage}\")?

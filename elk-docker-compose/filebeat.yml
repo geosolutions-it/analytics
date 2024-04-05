@@ -3,18 +3,24 @@ filebeat.inputs:
   id: geoserver-filestream
   paths:
     - /var/geoserver/logs/*.log
-  tags: ["Master"]
+  tags: ["geoserver", "logs", "log", "dev"]
   fields:
     app_context: geoserver_logs
+    type: geoserver-logs
   fields_under_root: true
+  multiline.pattern: '^([0-9]{4}-[0-9]{2}-[0-9]{2})'
+  multiline.negate: true
+  multiline.match: after
+
 
 - type: log
   id: audit-filestream
   paths:
     - /var/geoserver/audits/*.log
-  tags: ["Master"]
+  tags: ["geoserver", "audit", "dev"]
   fields:
     app_context: geoserver_audit_logs
+    type: geoserver-audit
   fields_under_root: true 
 
 filebeat.autodiscover:
@@ -31,7 +37,7 @@ processors:
 #  password: ${ELASTIC_PASSWORD} 
 
 output.logstash:
-  hosts: ["logstash01:9601"]
+  hosts: ["logstash:9601"]
 
 
 #output.elasticsearch:

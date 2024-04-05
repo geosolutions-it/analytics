@@ -1,268 +1,117 @@
 version: "3.8"
 
 volumes:
-  certs:
-    driver: local
-  esdata01:
-    driver: local
-  kibanadata:
-    driver: local
-  metricbeatdata01:
-    driver: local
-  filebeatdata01:
-    driver: local
-  logstashdata01:
-    driver: local
-  logs:
-    driver: local
-  datadir:
-    driver: local
-  gwc_config:
-    driver: local
-  gwc:
-    driver: local
-  netcfd:
-    driver: local
-  grib_cache:
-    driver: local
-  tomcat_logs:
-    driver: local
-  audit_logs:
-    driver: local
-
-networks:
-  default:
-    name: elastic
-    driver: bridge
+  opensearch-data:
+  logstashdata:
+  gsdatadir:
+  gsaudits:
+  gslogs:
 
 services:
-  setup:
-    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
-    volumes:
-      - certs:/usr/share/elasticsearch/config/certs
-    user: "0"
-    command: >
-      bash -c '
-        if [ x${ELASTIC_PASSWORD} == x ]; then
-          echo "Set the ELASTIC_PASSWORD environment variable in the .env file";
-          exit 1;
-        elif [ x${KIBANA_PASSWORD} == x ]; then
-          echo "Set the KIBANA_PASSWORD environment variable in the .env file";
-          exit 1;
-        fi;
-        if [ ! -f config/certs/ca.zip ]; then
-          echo "Creating CA";
-          bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
-          unzip config/certs/ca.zip -d config/certs;
-        fi;
-        if [ ! -f config/certs/certs.zip ]; then
-          echo "Creating certs";
-          echo -ne \
-          "instances:\n"\
-          "  - name: es01\n"\
-          "    dns:\n"\
-          "      - es01\n"\
-          "      - localhost\n"\
-          "    ip:\n"\
-          "      - 127.0.0.1\n"\
-          "  - name: kibana\n"\
-          "    dns:\n"\
-          "      - kibana\n"\
-          "      - localhost\n"\
-          "    ip:\n"\
-          "      - 127.0.0.1\n"\
-          > config/certs/instances.yml;
-          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
-          unzip config/certs/certs.zip -d config/certs;
-        fi;
-        echo "Setting file permissions"
-        chown -R root:root config/certs;
-        find . -type d -exec chmod 750 \{\} \;;
-        find . -type f -exec chmod 640 \{\} \;;
-        echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
-        echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
-        echo "All done!";
-      '
-    healthcheck:
-      test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
-      interval: 1s
-      timeout: 5s
-      retries: 120
-
-  es01:
-    depends_on:
-      setup:
-        condition: service_healthy
-    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
-    labels:
-      co.elastic.logs/module: elasticsearch
-    volumes:
-      - certs:/usr/share/elasticsearch/config/certs
-      - esdata01:/usr/share/elasticsearch/data
+  opensearch:
+    image: opensearchproject/opensearch:2.12.0
     ports:
-      - ${ES_PORT}:9200
+      - "9200:9200"
+      - "9600:9600"
     environment:
-      - node.name=es01
-      - cluster.name=${CLUSTER_NAME}
-      - discovery.type=single-node
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - bootstrap.memory_lock=true
-      - xpack.security.enabled=true
-      - xpack.security.http.ssl.enabled=true
-      - xpack.security.http.ssl.key=certs/es01/es01.key
-      - xpack.security.http.ssl.certificate=certs/es01/es01.crt
-      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
-      - xpack.security.transport.ssl.enabled=true
-      - xpack.security.transport.ssl.key=certs/es01/es01.key
-      - xpack.security.transport.ssl.certificate=certs/es01/es01.crt
-      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
-      - xpack.security.transport.ssl.verification_mode=certificate
-      - xpack.license.self_generated.type=${LICENSE}
-    mem_limit: ${ES_MEM_LIMIT}
+      - bootstrap.memory_lock=true # Disable JVM heap memory swapping
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and higher
     ulimits:
       memlock:
-        soft: -1
+        soft: -1 # Set memlock to unlimited (no soft or hard limit)
         hard: -1
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 120
-
-  kibana:
-    depends_on:
-      es01:
-        condition: service_healthy
-    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
-    labels:
-      co.elastic.logs/module: kibana
+      nofile:
+        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        hard: 65536
     volumes:
-      - certs:/usr/share/kibana/config/certs
-      - kibanadata:/usr/share/kibana/data
+      - opensearch-data:/usr/share/opensearch/data
+      - ./opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+
+      - ./ssl/ca.crt:/usr/share/opensearch/config/ca.pem:ro
+      - ./ssl/cert.crt:/usr/share/opensearch/config/cert.pem:ro
+      - ./ssl/cert.key:/usr/share/opensearch/config/key.pem:ro
+      - ./ssl/admin:/usr/share/opensearch/config/admin-cert:ro
+
+      - ./security/internal_users.yml:/usr/share/opensearch/config/opensearch-security/internal_users.yml
+    restart: unless-stopped
+
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:2.12.0
     ports:
-      - ${KIBANA_PORT}:5601
-    environment:
-      - SERVERNAME=kibana
-      - ELASTICSEARCH_HOSTS=https://es01:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
-      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-    mem_limit: ${KB_MEM_LIMIT}
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
-        ]
-      interval: 10s
-      timeout: 10s
-      retries: 120
-
-  geoserver:
-    depends_on:
-      es01:
-        condition: service_healthy
-    image: geoserver:elk-2.22.4
-    container_name: elk-geoserver
-    ports:
-      - 8080:8080
-    environment:
-      - GEOSERVER_LOG_DIR=${GEOSERVER_LOG_DIR}
-      - GEOSERVER_DATA_DIR=${GEOSERVER_DATA_DIR}
-      - GEOWEBCACHE_CONFIG_DIR=${GEOWEBCACHE_CONFIG_DIR}
-      - GEOWEBCACHE_CACHE_DIR=${GEOWEBCACHE_CACHE_DIR}
-      - NETCDF_DATA_DIR=${NETCDF_DATA_DIR}
-      - GRIB_CACHE_DIRL=${GRIB_CACHE_DIR}
-      - TOMCAT_LOG_DIR=${TOMCAT_LOG_DIR}
-      - GEOSERVER_AUDIT_DIR=${GEOSERVER_AUDIT_DIR}
+      - "5601:5601"
     volumes:
-      - logs:${GEOSERVER_LOG_DIR:-/var/geoserver/logs}
-      - datadir:${GEOSERVER_DATA_DIR:-/var/geoserver/datadir}
-      - gwc_config:${GEOWEBCACHE_CONFIG_DIR:-/var/geoserver/datadir/gwc}
-      - gwc:${GEOWEBCACHE_CACHE_DIR:-/var/geoserver/gwc_cache_dir}
-      - netcfd:${NETCDF_DATA_DIR:-/var/geoserver/netcdf_data_dir}
-      - grib_cache:${GRIB_CACHE_DIR:-/var/geoserver/grib_cache_dir}
-      - tomcat_logs:${TOMCAT_LOG_DIR:-/usr/local/tomcat/logs}
-      - audit_logs:${GEOSERVER_AUDIT_DIR:-/var/geoserver/audits}
+      - ./opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml:ro
+      # - ./.empty:/usr/share/opensearch-dashboards/plugins/securityDashboards # disable security (login) for testing
+    restart: unless-stopped
 
-  metricbeat01:
-    depends_on:
-      es01:
-        condition: service_healthy
-      kibana:
-        condition: service_healthy
-    image: docker.elastic.co/beats/metricbeat:${STACK_VERSION}
+  #metricbeat:
+  #  # image: docker.elastic.co/beats/metricbeat-oss:7.12.1
+  #  image: docker.elastic.co/beats/metricbeat-oss:7.11.2
+  #  volumes:
+  #    - ./metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+  #    - ./modules.d:/usr/share/metricbeat/modules.d:ro
+  #  restart: unless-stopped
+        
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss:7.12.1
     user: root
-    volumes:
-      - certs:/usr/share/metricbeat/certs
-      - metricbeatdata01:/usr/share/metricbeat/data
-      - "./metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro"
-      - "/proc:/hostfs/proc:ro"
-      - "/:/hostfs:ro"
-    environment:
-      - ELASTIC_USER=elastic
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_HOSTS=https://es01:9200
-      - KIBANA_HOSTS=http://kibana:5601
-      - LOGSTASH_HOSTS=http://logstash01:9600
-
-  filebeat01:
-    depends_on:
-      es01:
-        condition: service_healthy
-      logstash01:
-        condition: service_started
-    image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
-    user: root
-    entrypoint: ./filebeat -e --strict.perms=false -c /usr/share/filebeat/filebeat.yml
-    volumes:
-      - certs:/usr/share/filebeat/certs
-      - filebeatdata01:/usr/share/filebeat/data
-      - logs:${GEOSERVER_LOG_DIR:-/var/geoserver/logs}
-      - audit_logs:${GEOSERVER_AUDIT_DIR:-/var/geoserver/audits}
-      - "./filebeat_ingest_data/:/usr/share/filebeat/ingest_data/"
-      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    environment:
-      - ELASTIC_USER=elastic
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_HOSTS=https://es01:9200
-      - KIBANA_HOSTS=http://kibana:5601
-      - LOGSTASH_HOSTS=http://logstash01:9601
-
-  logstash01:
-    depends_on:
-      es01:
-        condition: service_healthy
-      kibana:
-        condition: service_healthy
-    image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
-    labels:
-      co.elastic.logs/module: logstash
-    user: root
-    # entrypoint: /usr/local/bin/docker-entrypoint --debug
     ports:
       - 9601:9601
     volumes:
-      - certs:/usr/share/logstash/certs
-      - logstashdata01:/usr/share/logstash/data
+      - logstashdata:/usr/share/logstash/data
+      - ./ssl/ca.crt:/usr/share/logstash/certs/ca.pem:ro
+      - ./ssl/cert.crt:/usr/share/logstash/certs/cert.pem:ro
       - "./logstash_ingest_data/:/usr/share/logstash/ingest_data/"
       - "./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
       - "./logstash/patterns/:/usr/share/logstash/patterns/"
     environment:
-      - xpack.monitoring.enabled=false
-      - ELASTIC_USER=elastic
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_HOSTS=https://es01:9200
+      - ELASTIC_HOSTS=http://opensearch:9200
+      - ELASTIC_USER=logstash
+      - ELASTIC_PASSWORD=logstash
+    restart: unless-stopped
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat-oss:7.12.1
+    user: root
+    entrypoint: ./filebeat -e --strict.perms=false -c /usr/share/filebeat/filebeat.yml
+    volumes:
+      - gslogs:${GEOSERVER_LOG_DIR:-/var/geoserver/logs}
+      - gsaudits:${GEOSERVER_AUDIT_DIR:-/var/geoserver/audits}
+      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart: unless-stopped
+
+  setup:
+    image: busybox
+    user: root
+    command: >
+      sh -xc '
+        if [ ! -f /var/geoserver/datadir/monitoring/header.ftl ]; then
+          cp -f /monitoring/* /var/geoserver/datadir/monitoring;
+        fi;
+      '
+    volumes:
+      - gsdatadir:/var/geoserver/datadir
+      - "./monitoring/:/monitoring:ro"
+
+  geoserver:
+    image: geosolutionsit/geoserver:2.24.2
+    user: root
+    command: >
+      /bin/sh -c '
+        apt update
+        apt install -y unzip
+        /entrypoint.sh
+      '
+    environment:
+      PLUGIN_DYNAMIC_URLS: "https://sourceforge.net/projects/geoserver/files/GeoServer/2.24.2/extensions/geoserver-2.24.2-monitor-plugin.zip"
+    ports:
+      - 8080:8080
+    volumes:
+      - gsdatadir:/var/geoserver/datadir
+      - gsaudits:/var/geoserver/audits
+      - gslogs:${GEOSERVER_LOG_DIR:-/var/geoserver/logs}
+    restart: unless-stopped
+
