@@ -64,7 +64,7 @@ The official [logstash](https://www.elastic.co/guide/en/logstash/current/docker.
 - <https://grokdebug.herokuapp.com/>
 - Embedded Kibana Grok Debugger
 
-## Kubernets
+## Kubernetes
 
 Tip for a nicely formatted configmap (applying this config map may produce a single liner in the logstash.conf: section of the yaml) you may treasure this for any config map using configuration files:
 ```bash
