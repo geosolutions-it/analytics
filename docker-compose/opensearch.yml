@@ -1,7 +1,5 @@
 cluster.name: my-application
 node.name: node-1
-#path.data: D:\Anisha\opensearch-2.12.0-windows-x64\opensearch-2.12.0\data
-#path.logs: D:\Anisha\opensearch-2.12.0-windows-x64\opensearch-2.12.0\logs
 network.host: 0.0.0.0
 http.port: 9200
 discovery.type: single-node

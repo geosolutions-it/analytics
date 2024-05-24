@@ -2,7 +2,7 @@ filebeat.inputs:
 - type: log
   id: geoserver-filestream
   paths:
-    - C:\Users\Administrator\Desktop\datadir\logs\*.log
+    - C:\Program Files\Apache Software Foundation\Tomcat 9.0\webapps\geoserver\data\logs\*.log
   tags: ["geoserver", "logs", "log", "env1"]
   fields:
     app_context: geoserver_logs
@@ -15,7 +15,7 @@ filebeat.inputs:
 - type: log
   id: audit-filestream
   paths:
-    - C:\Users\Administrator\Desktop\geoserver\logs\audits\*.log
+    - C:\Program Files\Apache Software Foundation\Tomcat 9.0\webapps\geoserver\data\audit\*.log
   tags: ["geoserver", "audit", "env1"]
   fields:
     app_context: geoserver_audit_logs
