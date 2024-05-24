@@ -1,11 +1,6 @@
-version: "3.8"
-
 volumes:
   opensearch-data:
   logstashdata:
-  gsdatadir:
-  gsaudits:
-  gslogs:
 
 services:
   opensearch:
@@ -45,14 +40,6 @@ services:
       # - ./.empty:/usr/share/opensearch-dashboards/plugins/securityDashboards # disable security (login) for testing
     restart: unless-stopped
 
-  #metricbeat:
-  #  # image: docker.elastic.co/beats/metricbeat-oss:7.12.1
-  #  image: docker.elastic.co/beats/metricbeat-oss:7.11.2
-  #  volumes:
-  #    - ./metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
-  #    - ./modules.d:/usr/share/metricbeat/modules.d:ro
-  #  restart: unless-stopped
-        
   logstash:
     image: docker.elastic.co/logstash/logstash-oss:7.12.1
     user: root
@@ -69,49 +56,5 @@ services:
       - ELASTIC_HOSTS=http://opensearch:9200
       - ELASTIC_USER=logstash
       - ELASTIC_PASSWORD=logstash
-    restart: unless-stopped
-
-  filebeat:
-    image: docker.elastic.co/beats/filebeat-oss:7.12.1
-    user: root
-    entrypoint: ./filebeat -e --strict.perms=false -c /usr/share/filebeat/filebeat.yml
-    volumes:
-      - gslogs:${GEOSERVER_LOG_DIR:-/var/geoserver/logs}
-      - gsaudits:${GEOSERVER_AUDIT_DIR:-/var/geoserver/audits}
-      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    restart: unless-stopped
-
-  setup:
-    image: busybox
-    user: root
-    command: >
-      sh -xc '
-        if [ ! -f /var/geoserver/datadir/monitoring/header.ftl ]; then
-          cp -f /monitoring/* /var/geoserver/datadir/monitoring;
-        fi;
-      '
-    volumes:
-      - gsdatadir:/var/geoserver/datadir
-      - "./monitoring/:/monitoring:ro"
-
-  geoserver:
-    image: geosolutionsit/geoserver:2.24.2
-    user: root
-    command: >
-      /bin/sh -c '
-        apt update
-        apt install -y unzip
-        /entrypoint.sh
-      '
-    environment:
-      PLUGIN_DYNAMIC_URLS: "https://sourceforge.net/projects/geoserver/files/GeoServer/2.24.2/extensions/geoserver-2.24.2-monitor-plugin.zip"
-    ports:
-      - 8080:8080
-    volumes:
-      - gsdatadir:/var/geoserver/datadir
-      - gsaudits:/var/geoserver/audits
-      - gslogs:${GEOSERVER_LOG_DIR:-/var/geoserver/logs}
     restart: unless-stopped
 

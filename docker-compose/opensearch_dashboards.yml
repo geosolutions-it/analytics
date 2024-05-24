@@ -73,7 +73,7 @@ opensearch.password: "kibanaserver"
 # opensearch.ssl.certificateAuthorities: [ "/path/to/your/CA.pem" ]
 
 # To disregard the validity of SSL certificates, change this setting's value to 'none'.
-opensearch.ssl.verificationMode: none
+# opensearch.ssl.verificationMode: none
 
 # Time in milliseconds to wait for OpenSearch to respond to pings. Defaults to the value of
 # the opensearch.requestTimeout setting.
