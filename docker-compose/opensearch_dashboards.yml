@@ -30,7 +30,7 @@ server.host: "0.0.0.0"
 # server.name: "your-hostname"
 
 # The URLs of the OpenSearch instances to use for all your queries.
-opensearch.hosts: ["http://opensearch:9200"]
+opensearch.hosts: ["https://opensearch:9200"]
 
 # OpenSearch Dashboards uses an index in OpenSearch to store saved searches, visualizations and
 # dashboards. OpenSearch Dashboards creates a new index if the index doesn't already exist.
@@ -73,7 +73,7 @@ opensearch.password: "kibanaserver"
 # opensearch.ssl.certificateAuthorities: [ "/path/to/your/CA.pem" ]
 
 # To disregard the validity of SSL certificates, change this setting's value to 'none'.
-# opensearch.ssl.verificationMode: none
+opensearch.ssl.verificationMode: none
 
 # Time in milliseconds to wait for OpenSearch to respond to pings. Defaults to the value of
 # the opensearch.requestTimeout setting.
@@ -203,4 +203,4 @@ opensearch_security.multitenancy.tenants.preferred: [Private, Global]
 opensearch_security.readonly_mode.roles: [kibana_read_only]
 ## Use this setting if you are running opensearch-dashboards without https
 opensearch_security.cookie.secure: false
-  
+
